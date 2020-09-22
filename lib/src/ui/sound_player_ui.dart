@@ -17,19 +17,19 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-
 import 'package:provider/provider.dart';
 import 'package:sounds_common/sounds_common.dart';
 
 import '../../sounds.dart';
 import '../sound_player.dart' show PlayerInvalidStateException;
-import 'grayed_out.dart';
 import 'recorder_playback_controller.dart';
 import 'slider.dart';
 import 'slider_position.dart';
 import 'tick_builder.dart';
 
 typedef OnLoad = Future<Track> Function(BuildContext context);
+
+typedef PlayButtonBuilder = Widget Function(bool isEnabled, bool canPlay);
 
 /// A HTML 5 style audio play bar.
 /// Allows you to play/pause/resume and seek an audio track.
@@ -56,6 +56,16 @@ class SoundPlayerUI extends StatefulWidget {
 
   final bool _autoFocus;
 
+  final Color _seekbarActiveColor;
+
+  final Color _seekbarInactiveColor;
+
+  final double _thumbRadius;
+
+  final PlayButtonBuilder _playButton;
+
+  final TextStyle _durationStyle;
+
   ///
   /// [SoundPlayerUI.fromTrack] Constructs a Playbar with a Track.
   /// [track] is the Track that contains the audio to play.
@@ -74,16 +84,27 @@ class SoundPlayerUI extends StatefulWidget {
   /// media that is playing when our player starts.
   /// By default we use [AudioFocus.hushOthersWithResume] which will
   /// reduce the volume of any other players.
-  SoundPlayerUI.fromTrack(Track track,
-      {Key key,
-      bool showTitle = false,
-      bool enabled = true,
-      bool autoFocus = true})
-      : _track = track,
+  SoundPlayerUI.fromTrack(
+    Track track, {
+    Key key,
+    bool showTitle = false,
+    bool enabled = true,
+    bool autoFocus = true,
+    Color seekbarActiveColor,
+    Color seekbarInactiveColor,
+    PlayButtonBuilder playButton,
+    TextStyle durationStyle,
+    double thumbRadius,
+  })  : _track = track,
         _autoFocus = autoFocus,
         _showTitle = showTitle,
         _onLoad = null,
         _enabled = enabled,
+        _seekbarActiveColor = seekbarActiveColor,
+        _seekbarInactiveColor = seekbarInactiveColor,
+        _playButton = playButton,
+        _durationStyle = durationStyle,
+        _thumbRadius = thumbRadius,
         super(key: key) {
     if (track.mediaFormat == null) {
       // we need the format so we can get the duration.
@@ -111,16 +132,27 @@ class SoundPlayerUI extends StatefulWidget {
   /// media that is playing when our player starts.
   /// By default we use [AudioFocus.hushOthersWithResume] which will
   /// reduce the volume of any other players.
-  SoundPlayerUI.fromLoader(OnLoad onLoad,
-      {Key key,
-      bool showTitle = false,
-      bool enabled = true,
-      bool autoFocus = true})
-      : _onLoad = onLoad,
+  SoundPlayerUI.fromLoader(
+    OnLoad onLoad, {
+    Key key,
+    bool showTitle = false,
+    bool enabled = true,
+    bool autoFocus = true,
+    Color seekbarActiveColor,
+    Color seekbarInactiveColor,
+    PlayButtonBuilder playButton,
+    TextStyle durationStyle,
+    double thumbRadius,
+  })  : _onLoad = onLoad,
         _autoFocus = autoFocus,
         _showTitle = showTitle,
         _track = null,
         _enabled = enabled,
+        _seekbarActiveColor = seekbarActiveColor,
+        _seekbarInactiveColor = seekbarInactiveColor,
+        _playButton = playButton,
+        _durationStyle = durationStyle,
+        _thumbRadius = thumbRadius,
         super(key: key);
 
   @override
@@ -287,17 +319,30 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
 
   Widget _buildPlayBar() {
     var rows = <Widget>[];
-    rows.add(Row(children: [_buildDuration(), _buildSlider()]));
-    if (widget._showTitle && track != null) rows.add(_buildTitle());
+    rows.add(Row(children: [_buildSlider(), _buildDuration()]));
+//    if (widget._showTitle && track != null) rows.add(_buildTitle());
 
     return Container(
         decoration: BoxDecoration(
-            color: Colors.grey,
+            color: Colors.transparent,
             borderRadius: BorderRadius.circular(SoundPlayerUI._barHeight / 2)),
-        child: Row(children: [
-          _buildPlayButton(),
-          Expanded(child: Column(children: rows))
-        ]));
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(children: [
+              _buildPlayButton(),
+              _buildSlider(),
+            ]),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(),
+                ),
+                _buildDuration(),
+              ],
+            )
+          ],
+        ));
   }
 
   /// Returns the players current state.
@@ -589,14 +634,12 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
               if (asyncData.connectionState == ConnectionState.done) {
                 canPlay = asyncData.data;
               }
-              return Icon(Icons.play_arrow,
-                  color: canPlay ? Colors.black : Colors.blueGrey);
+
+              return this.widget._playButton(true, canPlay);
             });
         break;
       case PlayState.disabled:
-        GrayedOut(
-            grayedOut: true,
-            child: widget = Icon(Icons.play_arrow, color: Colors.blueGrey));
+        return this.widget._playButton(false, false);
         break;
     }
     return widget;
@@ -609,9 +652,11 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
         builder: (context, snapshot) {
           var disposition = snapshot.data;
           return Text(
-              '${Format.duration(disposition.position, showSuffix: false)}'
-              ' / '
-              '${Format.duration(disposition.duration)}');
+            '${Format.duration(disposition.position, showSuffix: false)}'
+            ' / '
+            '${Format.duration(disposition.duration)}',
+            style: widget._durationStyle,
+          );
         });
   }
 
@@ -623,25 +668,10 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
         _sliderPosition.position = position;
         _player.seekTo(position);
       },
+      activeColor: widget._seekbarActiveColor,
+      inactiveColor: widget._seekbarInactiveColor,
+      thumbRadius: widget._thumbRadius,
     ));
-  }
-
-  Widget _buildTitle() {
-    var columns = <Widget>[];
-
-    if (track.title != null) {
-      columns.add(Text(track.title));
-    }
-    if (track.title != null && track.artist != null) {
-      columns.add(Text(' / '));
-    }
-    if (track.artist != null) {
-      columns.add(Text(track.artist));
-    }
-    return Container(
-      margin: EdgeInsets.only(bottom: 5),
-      child: Row(children: columns),
-    );
   }
 }
 

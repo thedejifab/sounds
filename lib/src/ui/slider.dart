@@ -21,13 +21,28 @@ import 'package:sounds_common/sounds_common.dart';
 
 ///
 class PlaybarSlider extends StatefulWidget {
+  ///color of
+  final Color activeColor;
+
+  /// color of
+  final Color inactiveColor;
+
+  ///thumb radius
+  final double thumbRadius;
+
   final void Function(Duration position) _seek;
 
   ///
   final Stream<PlaybackDisposition> stream;
 
   ///
-  PlaybarSlider(this.stream, this._seek);
+  PlaybarSlider(
+    this.stream,
+    this._seek, {
+    @required this.activeColor,
+    @required this.inactiveColor,
+    this.thumbRadius = 6.0,
+  });
 
   @override
   State<StatefulWidget> createState() {
@@ -41,8 +56,9 @@ class PlaybarSliderState extends State<PlaybarSlider> {
   Widget build(BuildContext context) {
     return SliderTheme(
         data: SliderTheme.of(context).copyWith(
-            thumbShape: RoundSliderThumbShape(enabledThumbRadius: 6.0),
-            inactiveTrackColor: Colors.blueGrey),
+          thumbShape:
+              RoundSliderThumbShape(enabledThumbRadius: widget.thumbRadius),
+        ),
         child: StreamBuilder<PlaybackDisposition>(
             stream: widget.stream,
             initialData: PlaybackDisposition.zero(),
@@ -51,6 +67,8 @@ class PlaybarSliderState extends State<PlaybarSlider> {
               return Slider(
                 max: disposition.duration.inMilliseconds.toDouble(),
                 value: disposition.position.inMilliseconds.toDouble(),
+                activeColor: widget.activeColor,
+                inactiveColor: widget.inactiveColor,
                 onChanged: (value) =>
                     widget._seek(Duration(milliseconds: value.toInt())),
               );
