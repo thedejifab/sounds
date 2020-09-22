@@ -85,17 +85,17 @@ class SoundPlayerUI extends StatefulWidget {
   /// By default we use [AudioFocus.hushOthersWithResume] which will
   /// reduce the volume of any other players.
   SoundPlayerUI.fromTrack(
-    Track track, {
-    Key key,
-    bool showTitle = false,
-    bool enabled = true,
-    bool autoFocus = true,
-    Color seekbarActiveColor,
-    Color seekbarInactiveColor,
-    PlayButtonBuilder playButton,
-    TextStyle durationStyle,
-    double thumbRadius,
-  })  : _track = track,
+      Track track, {
+        Key key,
+        bool showTitle = false,
+        bool enabled = true,
+        bool autoFocus = true,
+        Color seekbarActiveColor,
+        Color seekbarInactiveColor,
+        PlayButtonBuilder playButton,
+        TextStyle durationStyle,
+        double thumbRadius,
+      })  : _track = track,
         _autoFocus = autoFocus,
         _showTitle = showTitle,
         _onLoad = null,
@@ -133,17 +133,17 @@ class SoundPlayerUI extends StatefulWidget {
   /// By default we use [AudioFocus.hushOthersWithResume] which will
   /// reduce the volume of any other players.
   SoundPlayerUI.fromLoader(
-    OnLoad onLoad, {
-    Key key,
-    bool showTitle = false,
-    bool enabled = true,
-    bool autoFocus = true,
-    Color seekbarActiveColor,
-    Color seekbarInactiveColor,
-    PlayButtonBuilder playButton,
-    TextStyle durationStyle,
-    double thumbRadius,
-  })  : _onLoad = onLoad,
+      OnLoad onLoad, {
+        Key key,
+        bool showTitle = false,
+        bool enabled = true,
+        bool autoFocus = true,
+        Color seekbarActiveColor,
+        Color seekbarInactiveColor,
+        PlayButtonBuilder playButton,
+        TextStyle durationStyle,
+        double thumbRadius,
+      })  : _onLoad = onLoad,
         _autoFocus = autoFocus,
         _showTitle = showTitle,
         _track = null,
@@ -339,6 +339,7 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
                   child: SizedBox(),
                 ),
                 _buildDuration(),
+                SizedBox(width: 4),
               ],
             )
           ],
@@ -384,16 +385,16 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
         break;
 
       case PlayState.playing:
-        // pause the player
+      // pause the player
         await pause();
         break;
       case PlayState.paused:
-        // resume the player
+      // resume the player
         await resume();
 
         break;
       case PlayState.disabled:
-        // shouldn't be possible as play button is disabled.
+      // shouldn't be possible as play button is disabled.
         await _stop();
         break;
     }
@@ -562,9 +563,9 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
     if (_loading == true) {
       button = Container(
 
-          /// use a tick builder so we don't show the spinkit unless
-          /// at least 100ms has passed. This stops a little flicker
-          /// of the spiner caused by the default loading state.
+        /// use a tick builder so we don't show the spinkit unless
+        /// at least 100ms has passed. This stops a little flicker
+        /// of the spiner caused by the default loading state.
           child: TickBuilder(
               interval: Duration(milliseconds: 100),
               builder: (context, index) {
@@ -653,8 +654,8 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
           var disposition = snapshot.data;
           return Text(
             '${Format.duration(disposition.position, showSuffix: false)}'
-            ' / '
-            '${Format.duration(disposition.duration)}',
+                ' / '
+                '${Format.duration(disposition.duration, showSuffix: false)}',
             style: widget._durationStyle,
           );
         });
@@ -663,15 +664,15 @@ class SoundPlayerUIState extends State<SoundPlayerUI> {
   Widget _buildSlider() {
     return Expanded(
         child: PlaybarSlider(
-      _localController.stream,
-      (position) {
-        _sliderPosition.position = position;
-        _player.seekTo(position);
-      },
-      activeColor: widget._seekbarActiveColor,
-      inactiveColor: widget._seekbarInactiveColor,
-      thumbRadius: widget._thumbRadius,
-    ));
+          _localController.stream,
+              (position) {
+            _sliderPosition.position = position;
+            _player.seekTo(position);
+          },
+          activeColor: widget._seekbarActiveColor,
+          inactiveColor: widget._seekbarInactiveColor,
+          thumbRadius: widget._thumbRadius,
+        ));
   }
 }
 
